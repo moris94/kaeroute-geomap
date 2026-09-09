@@ -1,0 +1,9 @@
+{
+  "scope": "poc",
+  "version": "2026-09-poc1",
+  "packages": 32,
+  "bytes": 635078563,
+  "maxBytes": 58487335,
+  "orsRouteValidation": "pending: API key required",
+  "deviceValidation": "pending"
+}

@@ -1,0 +1,562 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "2026-09-poc1",
+  "grids": {
+    "JP": {
+      "latitudeStep": 0.13474667624865252,
+      "longitudeStep": 0.16655605158549086,
+      "bufferMeters": 1000
+    },
+    "TW": {
+      "latitudeStep": 0.13474667624865252,
+      "longitudeStep": 0.14749860022988415,
+      "bufferMeters": 1000
+    }
+  },
+  "packages": {
+    "JP-1916-930": {
+      "size": 8322133,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1916-930.pmtiles",
+      "checksum": "e8b0cb7493f131210862f0eabee48b9bddf44f4ab9c9d296f13b4ccf3b0e0bef",
+      "bounds": [
+        139.1213948378005,
+        35.314408911246844,
+        139.28795088938597,
+        35.4491555874955
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1916-931": {
+      "size": 8351669,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1916-931.pmtiles",
+      "checksum": "10251f51f74463248205ca0ae4a824cda56bd62167854bbd1f4461ecf95c58bf",
+      "bounds": [
+        139.1213948378005,
+        35.4491555874955,
+        139.28795088938597,
+        35.58390226374415
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1916-932": {
+      "size": 9443495,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1916-932.pmtiles",
+      "checksum": "3d425133fe9a27940ec78860068affb96c578286d1c0c027fd1ec1d795c3298d",
+      "bounds": [
+        139.1213948378005,
+        35.58390226374415,
+        139.28795088938597,
+        35.7186489399928
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1916-933": {
+      "size": 10337212,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1916-933.pmtiles",
+      "checksum": "03556afbefa974e1b7e37b0aa71d3804a845b2a7d50f6cdee75cdc9491563fc9",
+      "bounds": [
+        139.1213948378005,
+        35.7186489399928,
+        139.28795088938597,
+        35.85339561624146
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1917-930": {
+      "size": 24717735,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1917-930.pmtiles",
+      "checksum": "d54350414fbce55d06332d1160baaf36836688019a36b7ce64fc6081a4431ce0",
+      "bounds": [
+        139.28795088938597,
+        35.314408911246844,
+        139.4545069409715,
+        35.4491555874955
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1917-931": {
+      "size": 32922543,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1917-931.pmtiles",
+      "checksum": "b32d3bc9417c161fca999e0aac3531149b611b299f2529711bfb3ce9a43a2bf7",
+      "bounds": [
+        139.28795088938597,
+        35.4491555874955,
+        139.4545069409715,
+        35.58390226374415
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1917-932": {
+      "size": 24407928,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1917-932.pmtiles",
+      "checksum": "da827839cdaf7ce0b78d2d6322570194e9c65b8e990e32d1d50c521fa2432088",
+      "bounds": [
+        139.28795088938597,
+        35.58390226374415,
+        139.4545069409715,
+        35.7186489399928
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1917-933": {
+      "size": 25242455,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1917-933.pmtiles",
+      "checksum": "97ab18b7d4ba680ce2b4cb4f393d94ba8b5994d42fde0522c0265fa487dd245f",
+      "bounds": [
+        139.28795088938597,
+        35.7186489399928,
+        139.4545069409715,
+        35.85339561624146
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1918-930": {
+      "size": 41065559,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1918-930.pmtiles",
+      "checksum": "021ed3f48e2aef6cb859f8ea5d6d5cba8c3e4ad69e18dcaec2afff7efd2b4def",
+      "bounds": [
+        139.4545069409715,
+        35.314408911246844,
+        139.62106299255697,
+        35.4491555874955
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1918-931": {
+      "size": 49306816,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1918-931.pmtiles",
+      "checksum": "b1876075879648d2758167aa6ad1ae0ef25fe77a51f1ab0c02745733603373db",
+      "bounds": [
+        139.4545069409715,
+        35.4491555874955,
+        139.62106299255697,
+        35.58390226374415
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1918-932": {
+      "size": 46951288,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1918-932.pmtiles",
+      "checksum": "9f15ca8026ee1e737009094270d1b7f4872423b3662efdadd23117ceb970c67f",
+      "bounds": [
+        139.4545069409715,
+        35.58390226374415,
+        139.62106299255697,
+        35.7186489399928
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1918-933": {
+      "size": 48635031,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1918-933.pmtiles",
+      "checksum": "2fddd0513d8e0801d83e9448b416470a81a2f996adcbc79231a7f7eb23ee7b12",
+      "bounds": [
+        139.4545069409715,
+        35.7186489399928,
+        139.62106299255697,
+        35.85339561624146
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1919-930": {
+      "size": 8754263,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1919-930.pmtiles",
+      "checksum": "bed82c74942db5f57d3faff3f44009c22491968baa3393ed3d79547aaea2e116",
+      "bounds": [
+        139.62106299255697,
+        35.314408911246844,
+        139.78761904414245,
+        35.4491555874955
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1919-931": {
+      "size": 32302899,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1919-931.pmtiles",
+      "checksum": "1f3cba7522485c7084ab112fc2070661f2cce7460c8c94bc6b74623f50536068",
+      "bounds": [
+        139.62106299255697,
+        35.4491555874955,
+        139.78761904414245,
+        35.58390226374415
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1919-932": {
+      "size": 58487335,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1919-932.pmtiles",
+      "checksum": "9a22ac597d4a8fd5dfb6c720291ee13af000d137dc049b6cc356b8222b717ded",
+      "bounds": [
+        139.62106299255697,
+        35.58390226374415,
+        139.78761904414245,
+        35.7186489399928
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1919-933": {
+      "size": 44928790,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-319-155-2026-09-poc1/JP-1919-933.pmtiles",
+      "checksum": "4ac82563e7dd4274385fcfe1905f30b1b02898282c9d6418dfe6c3d0c0db63c3",
+      "bounds": [
+        139.62106299255697,
+        35.7186489399928,
+        139.78761904414245,
+        35.85339561624146
+      ],
+      "country": "JP",
+      "region": "JP-319-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1920-930": {
+      "size": 6360586,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-320-155-2026-09-poc1/JP-1920-930.pmtiles",
+      "checksum": "7382435371b05dccdcc615ebe80e2af0195aabd927552c3ac79be1b609694511",
+      "bounds": [
+        139.78761904414245,
+        35.314408911246844,
+        139.95417509572792,
+        35.4491555874955
+      ],
+      "country": "JP",
+      "region": "JP-320-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1920-931": {
+      "size": 3977059,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-320-155-2026-09-poc1/JP-1920-931.pmtiles",
+      "checksum": "b2e314626b11d1cc7d5fb226e15da83ca514783391410c1e202cb223389afb46",
+      "bounds": [
+        139.78761904414245,
+        35.4491555874955,
+        139.95417509572792,
+        35.58390226374415
+      ],
+      "country": "JP",
+      "region": "JP-320-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1920-932": {
+      "size": 22438750,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-320-155-2026-09-poc1/JP-1920-932.pmtiles",
+      "checksum": "869e6269eccd41bb2896969fd5d0da171b9ae1fc88714db5f66509ceebcc1995",
+      "bounds": [
+        139.78761904414245,
+        35.58390226374415,
+        139.95417509572792,
+        35.7186489399928
+      ],
+      "country": "JP",
+      "region": "JP-320-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "JP-1920-933": {
+      "size": 33353648,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/JP-320-155-2026-09-poc1/JP-1920-933.pmtiles",
+      "checksum": "29d6f2d1c38d37398d62ae4212fb90ee68bbaa940f37c431edec7900d01409ed",
+      "bounds": [
+        139.78761904414245,
+        35.7186489399928,
+        139.95417509572792,
+        35.85339561624146
+      ],
+      "country": "JP",
+      "region": "JP-320-155",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2042-852": {
+      "size": 7974322,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2042-852.pmtiles",
+      "checksum": "2df66cdfc1ad15c4cb70d3891a894c9d0fca08a97fbb71a591e75c4b1dadf9f3",
+      "bounds": [
+        121.19214166942345,
+        24.804168163851955,
+        121.33964026965333,
+        24.938914840100608
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2042-853": {
+      "size": 10965927,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2042-853.pmtiles",
+      "checksum": "3f6e3839d35f77bbdce33881a8258fa84a21e2b795bd108803aff4a0fc34c87c",
+      "bounds": [
+        121.19214166942345,
+        24.938914840100608,
+        121.33964026965333,
+        25.07366151634926
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2042-854": {
+      "size": 4231104,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2042-854.pmtiles",
+      "checksum": "d5db5af2b934d0e2e71c42e703eb995be748d228a9dee7ce702ba66cbe14da41",
+      "bounds": [
+        121.19214166942345,
+        25.07366151634926,
+        121.33964026965333,
+        25.208408192597915
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2043-852": {
+      "size": 5153985,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2043-852.pmtiles",
+      "checksum": "aad807816464e54ee4d92bf80022cee8772ef658fc30aedadebc495dd3c97551",
+      "bounds": [
+        121.33964026965333,
+        24.804168163851955,
+        121.48713886988321,
+        24.938914840100608
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2043-853": {
+      "size": 11543970,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2043-853.pmtiles",
+      "checksum": "d9412d1cbfdd4cd87bd72460330ccc66b546421a6a7faa78023ff91483b331aa",
+      "bounds": [
+        121.33964026965333,
+        24.938914840100608,
+        121.48713886988321,
+        25.07366151634926
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2043-854": {
+      "size": 7972139,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2043-854.pmtiles",
+      "checksum": "75d6990740a7bdc30313f6bfb8bb18e511d72d2083f47cd4bfa3ef667322112a",
+      "bounds": [
+        121.33964026965333,
+        25.07366151634926,
+        121.48713886988321,
+        25.208408192597915
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2044-852": {
+      "size": 3444895,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2044-852.pmtiles",
+      "checksum": "530bc5d65f13ffd4708d39ac18e859189922740a415b56b5fb42bab16324f0e9",
+      "bounds": [
+        121.48713886988321,
+        24.804168163851955,
+        121.63463747011309,
+        24.938914840100608
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2044-853": {
+      "size": 16547478,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2044-853.pmtiles",
+      "checksum": "2aa4b5a49cbdb011a616efb0c6b85ad43c4cc851bca110ec2a1b6ee247f3d5e7",
+      "bounds": [
+        121.48713886988321,
+        24.938914840100608,
+        121.63463747011309,
+        25.07366151634926
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2044-854": {
+      "size": 10353521,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2044-854.pmtiles",
+      "checksum": "ba3d889e1615df8978e3aff6792f81f88c784a455ce573309c0cc1bb559df43b",
+      "bounds": [
+        121.48713886988321,
+        25.07366151634926,
+        121.63463747011309,
+        25.208408192597915
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2045-852": {
+      "size": 4142719,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2045-852.pmtiles",
+      "checksum": "44e19f1aee5e8d70e2b9377900fd0c45668b93a5c0f0aea6475afb1825edb6eb",
+      "bounds": [
+        121.63463747011309,
+        24.804168163851955,
+        121.78213607034297,
+        24.938914840100608
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2045-853": {
+      "size": 5869331,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2045-853.pmtiles",
+      "checksum": "82f412a5f2b4c2e14ff69220165cff92cd773a1756e9c94134dee246bc69bad3",
+      "bounds": [
+        121.63463747011309,
+        24.938914840100608,
+        121.78213607034297,
+        25.07366151634926
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    },
+    "TW-2045-854": {
+      "size": 6571978,
+      "url": "https://github.com/moris94/kaeroute-geomap/releases/download/TW-340-142-2026-09-poc1/TW-2045-854.pmtiles",
+      "checksum": "136cbc615e82267e1963a5e7ffa284a9c8b3d79ba8ea56747996e3c803f88bb4",
+      "bounds": [
+        121.63463747011309,
+        25.07366151634926,
+        121.78213607034297,
+        25.208408192597915
+      ],
+      "country": "TW",
+      "region": "TW-340-142",
+      "minZoom": 8,
+      "maxZoom": 16,
+      "schema": "kaeroute-v1",
+      "attribution": "© OpenStreetMap contributors · https://www.openstreetmap.org/copyright"
+    }
+  }
+}
