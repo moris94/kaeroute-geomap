@@ -1,0 +1,117 @@
+schema_name: Kaeroute
+schema_description: Offline walking preparedness basemap, kaeroute-v1
+attribution: '© OpenStreetMap contributors · https://www.openstreetmap.org/copyright'
+args:
+  osm_url:
+    default: file://source.osm.pbf
+sources:
+  osm:
+    type: osm
+    url: '${ args.osm_url }'
+layers:
+- id: transportation
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 9
+    include_when:
+      highway: __any__
+    attributes:
+    - key: class
+      tag_value: highway
+    - key: bridge
+    - key: tunnel
+    - key: foot
+    - key: name
+- id: transportation_name
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 13
+    include_when:
+      highway: __any__
+    exclude_when:
+      name: null
+    attributes:
+    - key: name
+- id: railway
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 9
+    include_when:
+      railway: [rail, light_rail, subway, tram, narrow_gauge]
+    attributes:
+    - key: class
+      tag_value: railway
+    - key: name
+    - key: bridge
+    - key: tunnel
+- id: water
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 8
+    include_when:
+      natural: water
+      waterway: riverbank
+    attributes:
+    - key: name
+- id: waterway
+  features:
+  - source: osm
+    geometry: line
+    min_zoom: 9
+    include_when:
+      waterway: [river, canal, stream, drain]
+      natural: coastline
+    attributes:
+    - key: name
+    - key: class
+      tag_value: waterway
+- id: landuse
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 10
+    include_when:
+      leisure: [park, garden, nature_reserve, recreation_ground]
+    attributes:
+    - key: name
+- id: building
+  features:
+  - source: osm
+    geometry: polygon
+    min_zoom: 14
+    include_when:
+      building: __any__
+    exclude_when:
+      building: 'no'
+    attributes:
+    - key: name
+- id: place
+  features:
+  - source: osm
+    geometry: point
+    min_zoom: 8
+    include_when:
+      place: [city, town, village, suburb, quarter, neighbourhood, locality]
+    attributes:
+    - key: name
+    - key: class
+      tag_value: place
+- id: landmark
+  features:
+  - source: osm
+    geometry: point
+    min_zoom: 13
+    include_when:
+      railway: [station, halt]
+      amenity: [hospital, police, fire_station, school, university, townhall]
+    attributes:
+    - key: name
+    - key: class
+      value:
+        coalesce:
+        - tag_value: railway
+        - tag_value: amenity

@@ -1,0 +1,120 @@
+name: Build offline maps
+on:
+  push:
+    paths: ['pipeline.py', 'profile.yml', 'requirements.txt', '.github/workflows/maps.yml']
+  workflow_dispatch:
+    inputs:
+      scope:
+        type: choice
+        options: [poc, full]
+        default: poc
+      version:
+        type: string
+        default: '2026-09-poc1'
+      grid_km:
+        type: choice
+        options: ['10', '15', '20']
+        default: '15'
+      max_zoom:
+        type: choice
+        options: ['14', '15', '16']
+        default: '16'
+permissions:
+  contents: write
+concurrency:
+  group: map-release-${{ inputs.version || '2026-09-poc1' }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        country: [JP, TW]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y osmium-tool
+          pip install -r requirements.txt
+          python -m unittest discover -s tests -v
+      - name: Plan and extract grid batches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COUNTRY: ${{ matrix.country }}
+          SCOPE: ${{ inputs.scope || 'poc' }}
+          VERSION: ${{ inputs.version || '2026-09-poc1' }}
+          GRID_KM: ${{ inputs.grid_km || '15' }}
+          MAX_ZOOM: ${{ inputs.max_zoom || '16' }}
+        run: python pipeline.py plan --country "$COUNTRY" --scope "$SCOPE" --version "$VERSION" --size "$GRID_KM" --zoom "$MAX_ZOOM" --output "matrix-$COUNTRY.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matrix-${{ matrix.country }}
+          path: matrix-*.json
+          retention-days: 1
+  matrix:
+    needs: plan
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.collect.outputs.matrix }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: matrix-*
+          merge-multiple: true
+      - id: collect
+        run: |
+          python - <<'PY'
+          import json,glob,os
+          include=[entry for path in sorted(glob.glob('matrix-*.json')) for entry in json.load(open(path))['include']]
+          if not 0 < len(include) <= 256: raise RuntimeError('matrix exceeds supported job count; reduce batches per run')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('matrix='+json.dumps({'include':include},separators=(',',':'))+'\n')
+          PY
+  build:
+    needs: matrix
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: pip install -r requirements.txt
+      - name: Generate and publish immutable PMTiles
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BATCH: ${{ matrix.batch }}
+          SOURCE_TAG: ${{ matrix.sourceTag }}
+        run: python pipeline.py build --batch "$BATCH" --source-tag "$SOURCE_TAG"
+  manifest:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and activate complete manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version || '2026-09-poc1' }}
+          SCOPE: ${{ inputs.scope || 'poc' }}
+        run: |
+          python pipeline.py assemble --version "$VERSION" --scope "$SCOPE" --output manifest.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add manifest.json generation-report.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish verified map manifest $VERSION"
+          git pull --rebase origin main
+          git push origin HEAD:main
