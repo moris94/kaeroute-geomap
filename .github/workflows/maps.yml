@@ -10,7 +10,7 @@ on:
         default: poc
       version:
         type: string
-        default: '2026-09-poc1'
+        required: true
       grid_km:
         type: choice
         options: ['10', '15', '20']
@@ -127,9 +127,10 @@ jobs:
           BATCHES: ${{ toJSON(matrix.batches) }}
         run: |
           python - <<'PYTHON'
-          import json,os,subprocess,shutil
+          import json,os,shutil,pipeline
+          from types import SimpleNamespace
           for batch in json.loads(os.environ['BATCHES']):
-              subprocess.run(['python','pipeline.py','build','--batch',batch['batch'],'--source-tag',batch['sourceTag']],check=True)
+              pipeline.build(SimpleNamespace(repo=os.environ['GITHUB_REPOSITORY'],work='work',batch=batch['batch'],source_tag=batch['sourceTag']))
               shutil.rmtree('work')
           PYTHON
   manifest:

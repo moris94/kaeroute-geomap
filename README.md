@@ -18,7 +18,7 @@ python pipeline.py build --batch TW-X-Y --source-tag SOURCE-TW-2026-09-poc1
 python pipeline.py assemble --scope poc --version 2026-09-poc1 --output manifest.json
 ```
 
-Dependencies for generation: Java 21, osmium-tool CLI, GitHub CLI authenticated for this repository, and the pinned Python packages. Keep `GH_TOKEN` in the workflow environment. Never include tokens or private route coordinates in files, logs, releases, or manifests.
+Dependencies for generation: Java 21, osmium-tool CLI, a repository-scoped `GH_TOKEN`, and the pinned Python packages. Keep `GH_TOKEN` in the workflow environment. Never include tokens or private route coordinates in files, logs, releases, or manifests.
 
 ## Data and attribution
 
@@ -39,3 +39,5 @@ The **Compare grid and zoom sizes** workflow reuses published PoC source extract
 Generation renumbers OSM objects to dense derived IDs before multi-extraction. This preserves references while avoiding bitsets proportional to worldwide OSM IDs. These derived PBF files must never be uploaded back to OSM. The original source SHA-256 and dense source SHA-256 are both retained in batch specifications. Source assets are partitioned into releases with at most 400 PBF/spec pairs; the country source release holds the coverage plan and final plan.
 
 A completed immutable `plan.json` allows later attempts to resume directly at tile generation. Change an `attempt` field in `build-request.json` to request another run without changing the data version; grid, scope, zoom and extraction boundary must still match the published plan. Individual builds always recheck the extracted PBF SHA-256. Changes to geographic inputs or map profile require a new version.
+
+Publication streams each asset directly to the GitHub upload API, retaining the same repository token and respecting rate-limit reset/Retry-After headers. Permission errors fail immediately. Existing complete batches are reused only when every published asset size and server SHA-256 match its manifest. Release metadata and the pinned Planetiler JAR are reused across batches within a job. Bulk publication can take many hours because GitHub API quotas apply to the entire repository; retries wait instead of rotating credentials or clobbering assets.

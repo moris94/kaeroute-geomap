@@ -6,6 +6,8 @@ locations, application sources, API keys, or local config in release assets.
 """
 import argparse
 import hashlib
+import http.client
+import contextlib
 import json
 import math
 import os
@@ -15,6 +17,7 @@ import shutil
 import subprocess
 import time
 import urllib.request
+import urllib.parse
 
 ROOT = Path(__file__).resolve().parent
 ATTRIBUTION = '© OpenStreetMap contributors · https://www.openstreetmap.org/copyright'
@@ -66,30 +69,113 @@ def download(url, path):
             time.sleep(2**attempt)
 
 
-def release(repo, tag, title):
-    check = subprocess.run(['gh', 'release', 'view', tag, '--repo', repo], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if check.returncode:
-        run('gh', 'release', 'create', tag, '--repo', repo, '--title', title,
-            '--notes', ATTRIBUTION + '\nOSM-derived data distributed under ODbL 1.0. Preparedness maps do not guarantee safety or access.', '--prerelease')
+class GitHubAPIError(RuntimeError):
+    def __init__(self,status,message):
+        self.status=status
+        super().__init__(f'GitHub HTTP {status}: {message}')
 
 
-def upload(repo, tag, files):
-    # Never clobber an existing asset. Resuming requires content equality.
-    entries = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
-    assets = {a['name']: a for a in entries['assets']}
-    for path in files:
-        path = Path(path)
+def github_api(endpoint, method='GET', payload=None, file=None):
+    """Use one request per asset; stream bytes and respect the existing token's quota."""
+    host='uploads.github.com' if file else 'api.github.com'
+    headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'User-Agent':'kaeroute-map-builder',
+             'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+    encoded=json.dumps(payload).encode() if payload is not None else None
+    if file:
+        headers.update({'Content-Type':'application/octet-stream','Content-Length':str(Path(file).stat().st_size)})
+    elif encoded is not None:
+        headers.update({'Content-Type':'application/json','Content-Length':str(len(encoded))})
+    deadline=time.monotonic()+4*3600
+    for attempt in range(20):
+        connection=http.client.HTTPSConnection(host,timeout=120)
+        try:
+            with Path(file).open('rb') if file else contextlib.nullcontext(encoded) as body:
+                connection.request(method,'/'+endpoint.lstrip('/'),body=body,headers=headers)
+                response=connection.getresponse(); raw=response.read()
+            value=json.loads(raw) if raw else {}
+            if 200 <= response.status < 300: return value
+            message=value.get('message','request failed')
+            if response.status in (403,429) and ('rate limit' in message.lower() or response.status==429):
+                reset=response.getheader('X-RateLimit-Reset','0')
+                after=response.getheader('Retry-After','60')
+                delay=max(60,int(after) if after.isdigit() else 60,
+                          int(reset)-int(time.time())+5 if reset.isdigit() else 0)
+                if time.monotonic()+delay > deadline: raise GitHubAPIError(response.status,'quota wait exceeded four hours; resume this build later')
+                print(f'GitHub quota reached; waiting {delay}s before resuming the same request',flush=True)
+                time.sleep(delay); continue
+            if response.status >= 500 and attempt < 6:
+                time.sleep(min(60,2**attempt)); continue
+            raise GitHubAPIError(response.status,message)
+        except (OSError,http.client.HTTPException):
+            if attempt >= 6: raise
+            time.sleep(min(60,2**attempt))
+        finally:
+            connection.close()
+    raise RuntimeError('GitHub retry budget exhausted; resume this build later')
+
+
+_releases={}
+
+
+def release_info(repo,tag,refresh=False):
+    key=(repo,tag)
+    if refresh or key not in _releases:
+        _releases[key]=github_api(f'repos/{repo}/releases/tags/{urllib.parse.quote(tag,safe="")}')
+    return _releases[key]
+
+
+def release(repo,tag,title):
+    try: return release_info(repo,tag)
+    except GitHubAPIError as error:
+        if error.status != 404: raise
+    payload={'tag_name':tag,'name':title,'prerelease':True,
+             'body':ATTRIBUTION+'\nOSM-derived data distributed under ODbL 1.0. Preparedness maps do not guarantee safety or access.'}
+    try: result=github_api(f'repos/{repo}/releases','POST',payload=payload)
+    except GitHubAPIError as error:
+        if error.status != 422: raise
+        result=release_info(repo,tag,refresh=True)
+    _releases[(repo,tag)]=result
+    return result
+
+
+def asset_matches(asset,path):
+    known=asset.get('digest')
+    if known and known.startswith('sha256:'): return known=='sha256:'+digest(path)
+    with urllib.request.urlopen(asset['browser_download_url'],timeout=120) as response:
+        h=hashlib.sha256()
+        for block in iter(lambda:response.read(1024*1024),b''): h.update(block)
+    return h.hexdigest()==digest(path)
+
+
+def upload(repo,tag,files):
+    info=release_info(repo,tag)
+    assets={a['name']:a for a in info['assets']}
+    for item in files:
+        path=Path(item)
         if path.name in assets:
-            known_digest = assets[path.name].get('digest')
-            if known_digest and known_digest.startswith('sha256:'):
-                if known_digest != 'sha256:'+digest(path): raise ValueError('immutable asset differs: '+path.name)
-                continue
-            with urllib.request.urlopen(assets[path.name]['browser_download_url']) as response:
-                h = hashlib.sha256()
-                for block in iter(lambda: response.read(1024*1024), b''): h.update(block)
-            if h.hexdigest() != digest(path): raise ValueError('immutable asset differs: ' + path.name)
-        else:
-            run('gh', 'release', 'upload', tag, path, '--repo', repo)
+            if not asset_matches(assets[path.name],path): raise ValueError('immutable asset differs: '+path.name)
+            continue
+        endpoint=f"repos/{repo}/releases/{info['id']}/assets?"+urllib.parse.urlencode({'name':path.name})
+        try: asset=github_api(endpoint,'POST',file=path)
+        except GitHubAPIError as error:
+            # The upload may have completed even if its first response was lost.
+            if error.status != 422: raise
+            info=release_info(repo,tag,refresh=True)
+            asset=next((a for a in info['assets'] if a['name']==path.name),None)
+            if not asset or not asset_matches(asset,path): raise
+        if asset['size'] != path.stat().st_size or (asset.get('digest') and asset['digest']!='sha256:'+digest(path)):
+            raise ValueError('uploaded asset checksum/size differs: '+path.name)
+        assets[path.name]=asset
+        if not any(a['name']==path.name for a in info['assets']): info['assets'].append(asset)
+
+
+def download_assets(repo,tag,names,directory):
+    info=release_info(repo,tag)
+    assets={a['name']:a for a in info['assets']}
+    for name in names:
+        if name not in assets: raise ValueError('missing release asset: '+name)
+        download(assets[name]['browser_download_url'],Path(directory)/name)
+    return info
 
 
 def plan(args):
@@ -99,20 +185,21 @@ def plan(args):
     # A final source plan exists only after all immutable extracts were uploaded.
     # Resume tile generation without downloading/scanning the entire country.
     tag = f'SOURCE-{args.country}-{args.version}'
-    existing = subprocess.run(['gh','api',f'repos/{args.repo}/releases/tags/{tag}'],capture_output=True,text=True)
-    if existing.returncode == 0:
-        asset = next((a for a in json.loads(existing.stdout)['assets'] if a['name']=='plan.json'),None)
+    try: existing=release_info(args.repo,tag)
+    except GitHubAPIError as error:
+        if error.status != 404: raise
+        existing=None
+    if existing:
+        asset=next((a for a in existing['assets'] if a['name']=='plan.json'),None)
         if asset:
             download(asset['browser_download_url'],work/'plan.json')
-            previous = json.loads((work/'plan.json').read_text())
+            previous=json.loads((work/'plan.json').read_text())
             if (previous['version'] != args.version or previous['scope'] != args.scope or previous['grid'] != g
                 or any(s['maxZoom'] != args.zoom or s.get('boundarySHA256') != digest(ROOT/'bounds'/f'{args.country}.poly') for s in previous['batches'])):
                 raise ValueError('immutable source plan differs from request')
             write(args.output,{'include':[{'batch':s['batch'],'sourceTag':s['sourceTag'],'version':args.version} for s in previous['batches']]})
             print(f"{args.country}: reused {len(previous['batches'])} verified source batch specifications",flush=True)
             return
-    elif '404' not in existing.stderr:
-        raise RuntimeError('could not inspect source release: '+existing.stderr)
     source_url = f'https://download.geofabrik.de/asia/{SOURCES[args.country]}-{SOURCE_DATE}.osm.pbf'
     source = work/'source.osm.pbf'
     download(source_url, source)
@@ -225,12 +312,29 @@ def build(args):
     from pmtiles.tile import zxy_to_tileid
     import mmap
     work=Path(args.work).resolve(); work.mkdir(parents=True,exist_ok=True)
-    run('gh','release','download',args.source_tag,'--repo',args.repo,'--pattern',args.batch+'.*','--dir',work,'--clobber')
+    download_assets(args.repo,args.source_tag,[args.batch+'.json',args.batch+'.osm.pbf'],work)
     spec=json.loads((work/(args.batch+'.json')).read_text())
     pbf=work/(args.batch+'.osm.pbf')
     if digest(pbf)!=spec['extractedSHA256']:raise ValueError('extract checksum mismatch')
-    jar=work/'planetiler.jar'
-    download(f'https://github.com/onthegomap/planetiler/releases/download/v{PLANETILER_VERSION}/planetiler.jar',jar)
+    tag=f"{args.batch}-{spec['mapVersion']}"
+    try: published=release_info(args.repo,tag)
+    except GitHubAPIError as error:
+        if error.status != 404: raise
+        published=None
+    if published and any(a['name']=='manifest-fragment.json' for a in published['assets']):
+        download_assets(args.repo,tag,['manifest-fragment.json'],work)
+        fragment=json.loads((work/'manifest-fragment.json').read_text())
+        validate_manifest(fragment)
+        if (fragment['mapVersion']!=spec['mapVersion'] or fragment['sourceSHA256']!=spec['sourceSHA256']
+            or fragment['planetilerSHA256']!=PLANETILER_SHA256 or fragment['grids'][spec['country']]!=spec['grid']
+            or set(fragment['packages'])!={c['id'] for c in spec['cells']}):
+            raise ValueError('immutable published batch differs')
+        assets={a['name']:a for a in published['assets']}
+        if all(assets.get(key+'.pmtiles',{}).get('size')==value['size'] and assets.get(key+'.pmtiles',{}).get('digest')=='sha256:'+value['checksum'] for key,value in fragment['packages'].items()):
+            print(json.dumps({'batch':args.batch,'reused':True,'files':len(fragment['packages'])}),flush=True)
+            return
+    jar=ROOT/'.cache'/f'planetiler-{PLANETILER_VERSION}.jar';jar.parent.mkdir(exist_ok=True)
+    if not jar.exists(): download(f'https://github.com/onthegomap/planetiler/releases/download/v{PLANETILER_VERSION}/planetiler.jar',jar)
     if digest(jar) != PLANETILER_SHA256: raise ValueError('Planetiler checksum mismatch')
     started=time.monotonic()
     out=work/'batch.pmtiles'
@@ -238,7 +342,7 @@ def build(args):
         '--osm-url=file://'+str(pbf.resolve()),f'--output={out}',f'--tmpdir={work}/temp',
         '--minzoom=8',f"--maxzoom={spec['maxZoom']}",
         '--bounds='+','.join(str(v) for v in spec['extractionBounds']), '--force')
-    pbf.unlink(); jar.unlink(); shutil.rmtree(work/'temp',ignore_errors=True)
+    pbf.unlink(); shutil.rmtree(work/'temp',ignore_errors=True)
     entries={}
     tag=f"{args.batch}-{spec['mapVersion']}"
     release(args.repo,tag,tag)
@@ -292,13 +396,13 @@ def assemble(args):
     expected=set()
     for country in SOURCES:
         directory=Path(args.work)/country;directory.mkdir(parents=True,exist_ok=True)
-        run('gh','release','download',f'SOURCE-{country}-{args.version}','--repo',args.repo,'--pattern','plan.json','--dir',directory,'--clobber')
+        download_assets(args.repo,f'SOURCE-{country}-{args.version}',['plan.json'],directory)
         plan=json.loads((directory/'plan.json').read_text())
         if plan['scope'] != args.scope:raise ValueError('scope mismatch')
         for spec in plan['batches']:
             tag=f"{spec['batch']}-{args.version}"
             target=directory/spec['batch'];target.mkdir(exist_ok=True)
-            run('gh','release','download',tag,'--repo',args.repo,'--pattern','manifest-fragment.json','--dir',target,'--clobber')
+            info=download_assets(args.repo,tag,['manifest-fragment.json'],target)
             fragment=json.loads((target/'manifest-fragment.json').read_text())
             if fragment['mapVersion']!=args.version or fragment['grids'][country]!=plan['grid']:raise ValueError('mixed version/grid')
             ids={c['id'] for c in spec['cells']}
@@ -306,10 +410,12 @@ def assemble(args):
             if expected & ids:raise ValueError('duplicate grid')
             expected |= ids
             # Confirm all published assets and sizes before activating the catalog.
-            assets=json.loads(subprocess.check_output(['gh','api',f'repos/{args.repo}/releases/tags/{tag}']))['assets']
+            assets=info['assets']
             sizes={a['name']:a['size'] for a in assets}
+            checksums={a['name']:a.get('digest') for a in assets}
             for key,value in fragment['packages'].items():
                 if sizes.get(key+'.pmtiles')!=value['size']:raise ValueError('missing/wrong-size asset')
+                if checksums.get(key+'.pmtiles') and checksums[key+'.pmtiles']!='sha256:'+value['checksum']:raise ValueError('uploaded checksum mismatch')
             manifest['packages'].update(fragment['packages']);manifest['grids'].update(fragment['grids'])
     if not expected:raise ValueError('empty catalog')
     validate_manifest(manifest)

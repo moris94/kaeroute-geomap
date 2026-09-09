@@ -4,12 +4,39 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import json
+from unittest.mock import Mock, patch
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('pipeline',ROOT/'pipeline.py')
 pipeline=importlib.util.module_from_spec(spec);spec.loader.exec_module(pipeline)
 
 class PipelineTests(unittest.TestCase):
+    def response(self,status,payload,headers=None):
+        response=Mock(status=status)
+        response.read.return_value=json.dumps(payload).encode()
+        response.getheader.side_effect=lambda name,default=None:(headers or {}).get(name,default)
+        return response
+    def test_github_waits_for_same_installation_quota_reset(self):
+        first=Mock();first.getresponse.return_value=self.response(403,{'message':'API rate limit exceeded'}, {'X-RateLimit-Reset':'160'})
+        second=Mock();second.getresponse.return_value=self.response(200,{'id':1})
+        with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}), patch.object(pipeline.http.client,'HTTPSConnection',side_effect=[first,second]), patch.object(pipeline.time,'time',return_value=100), patch.object(pipeline.time,'sleep') as sleep:
+            self.assertEqual(pipeline.github_api('repos/owner/maps/releases'),{'id':1})
+            sleep.assert_called_once_with(65)
+    def test_github_permission_failure_is_not_retried(self):
+        connection=Mock();connection.getresponse.return_value=self.response(403,{'message':'Resource not accessible by integration'})
+        with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}), patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection), patch.object(pipeline.time,'sleep') as sleep:
+            with self.assertRaises(pipeline.GitHubAPIError):pipeline.github_api('repos/owner/maps/releases')
+            sleep.assert_not_called()
+    def test_github_upload_streams_file_with_known_length(self):
+        connection=Mock();connection.getresponse.return_value=self.response(201,{'id':2})
+        captured=[]
+        connection.request.side_effect=lambda method,path,body,headers:captured.append((body.read(),headers['Content-Length']))
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'asset';path.write_bytes(b'map')
+            with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection):
+                self.assertEqual(pipeline.github_api('repos/owner/maps/releases/1/assets?name=asset','POST',file=path),{'id':2})
+        self.assertEqual(captured,[(b'map','3')])
     def test_empty_tile_uses_pmtiles_compression_enum(self):
         import gzip
         from pmtiles.tile import Compression
