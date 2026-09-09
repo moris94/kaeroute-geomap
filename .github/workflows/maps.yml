@@ -1,7 +1,7 @@
 name: Build offline maps
 on:
   push:
-    paths: ['pipeline.py', 'profile.yml', 'requirements.txt', '.github/workflows/maps.yml']
+    paths: ['build-request.json']
   workflow_dispatch:
     inputs:
       scope:
@@ -22,10 +22,36 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: map-release-${{ inputs.version || '2026-09-poc1' }}
+  group: map-release
   cancel-in-progress: false
 jobs:
+  configuration:
+    runs-on: ubuntu-24.04
+    outputs:
+      scope: ${{ steps.config.outputs.scope }}
+      version: ${{ steps.config.outputs.version }}
+      size: ${{ steps.config.outputs.size }}
+      zoom: ${{ steps.config.outputs.zoom }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: config
+        env:
+          INPUT_SCOPE: ${{ inputs.scope }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_SIZE: ${{ inputs.grid_km }}
+          INPUT_ZOOM: ${{ inputs.max_zoom }}
+        run: |
+          python - <<'PYTHON'
+          import json,os,re
+          value=json.load(open('build-request.json'))
+          value={key:os.environ.get('INPUT_'+key.upper()) or str(value[key]) for key in ('scope','version','size','zoom')}
+          assert value['scope'] in ('poc','full') and value['size'] in ('10','15','20') and value['zoom'] in ('14','15','16')
+          assert re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9._-]{0,60}',value['version'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              for key,text in value.items(): f.write(key+'='+text+'\n')
+          PYTHON
   plan:
+    needs: configuration
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -47,10 +73,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           COUNTRY: ${{ matrix.country }}
-          SCOPE: ${{ inputs.scope || 'poc' }}
-          VERSION: ${{ inputs.version || '2026-09-poc1' }}
-          GRID_KM: ${{ inputs.grid_km || '15' }}
-          MAX_ZOOM: ${{ inputs.max_zoom || '16' }}
+          SCOPE: ${{ needs.configuration.outputs.scope }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          GRID_KM: ${{ needs.configuration.outputs.size }}
+          MAX_ZOOM: ${{ needs.configuration.outputs.zoom }}
         run: python pipeline.py plan --country "$COUNTRY" --scope "$SCOPE" --version "$VERSION" --size "$GRID_KM" --zoom "$MAX_ZOOM" --output "matrix-$COUNTRY.json"
       - uses: actions/upload-artifact@v4
         with:
@@ -72,7 +98,9 @@ jobs:
           python - <<'PY'
           import json,glob,os
           include=[entry for path in sorted(glob.glob('matrix-*.json')) for entry in json.load(open(path))['include']]
-          if not 0 < len(include) <= 256: raise RuntimeError('matrix exceeds supported job count; reduce batches per run')
+          if not include: raise RuntimeError('empty build plan')
+          count=(len(include)+127)//128
+          include=[{'batches':include[i:i+count]} for i in range(0,len(include),count)]
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write('matrix='+json.dumps({'include':include},separators=(',',':'))+'\n')
           PY
   build:
@@ -96,19 +124,24 @@ jobs:
       - name: Generate and publish immutable PMTiles
         env:
           GH_TOKEN: ${{ github.token }}
-          BATCH: ${{ matrix.batch }}
-          SOURCE_TAG: ${{ matrix.sourceTag }}
-        run: python pipeline.py build --batch "$BATCH" --source-tag "$SOURCE_TAG"
+          BATCHES: ${{ toJSON(matrix.batches) }}
+        run: |
+          python - <<'PYTHON'
+          import json,os,subprocess,shutil
+          for batch in json.loads(os.environ['BATCHES']):
+              subprocess.run(['python','pipeline.py','build','--batch',batch['batch'],'--source-tag',batch['sourceTag']],check=True)
+              shutil.rmtree('work')
+          PYTHON
   manifest:
-    needs: build
+    needs: [build, configuration]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Validate and activate complete manifest
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version || '2026-09-poc1' }}
-          SCOPE: ${{ inputs.scope || 'poc' }}
+          VERSION: ${{ needs.configuration.outputs.version }}
+          SCOPE: ${{ needs.configuration.outputs.scope }}
         run: |
           python pipeline.py assemble --version "$VERSION" --scope "$SCOPE" --output manifest.json
           git config user.name 'github-actions[bot]'

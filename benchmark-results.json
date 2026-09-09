@@ -1,0 +1,159 @@
+{
+  "run": "https://github.com/moris94/kaeroute-geomap/actions/runs/34322055870",
+  "sourceVersion": "2026-09-poc1",
+  "scope": "Fixed geographic areas; not ORS route acceptance",
+  "JP": [
+    {
+      "gridKM": 10,
+      "maxZoom": 14,
+      "packages": 36,
+      "totalBytes": 338445071,
+      "maxBytes": 21248576,
+      "medianBytes": 8917255
+    },
+    {
+      "gridKM": 10,
+      "maxZoom": 15,
+      "packages": 36,
+      "totalBytes": 470564534,
+      "maxBytes": 30685280,
+      "medianBytes": 12975029
+    },
+    {
+      "gridKM": 10,
+      "maxZoom": 16,
+      "packages": 36,
+      "totalBytes": 619197715,
+      "maxBytes": 41372435,
+      "medianBytes": 18678633
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 14,
+      "packages": 20,
+      "totalBytes": 272857549,
+      "maxBytes": 24310084,
+      "medianBytes": 14197204
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 15,
+      "packages": 20,
+      "totalBytes": 405084742,
+      "maxBytes": 40706991,
+      "medianBytes": 19364633
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 16,
+      "packages": 20,
+      "totalBytes": 557526000,
+      "maxBytes": 59370278,
+      "medianBytes": 25574997
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 14,
+      "packages": 16,
+      "totalBytes": 271352461,
+      "maxBytes": 42796276,
+      "medianBytes": 19429572
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 15,
+      "packages": 16,
+      "totalBytes": 419342503,
+      "maxBytes": 71012670,
+      "medianBytes": 27524586
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 16,
+      "packages": 16,
+      "totalBytes": 593648391,
+      "maxBytes": 103828264,
+      "medianBytes": 36932967
+    }
+  ],
+  "TW": [
+    {
+      "gridKM": 10,
+      "maxZoom": 14,
+      "packages": 20,
+      "totalBytes": 80711212,
+      "maxBytes": 7580047,
+      "medianBytes": 3857205
+    },
+    {
+      "gridKM": 10,
+      "maxZoom": 15,
+      "packages": 20,
+      "totalBytes": 94023032,
+      "maxBytes": 10372653,
+      "medianBytes": 4212443
+    },
+    {
+      "gridKM": 10,
+      "maxZoom": 16,
+      "packages": 20,
+      "totalBytes": 109669520,
+      "maxBytes": 13734393,
+      "medianBytes": 4627719
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 14,
+      "packages": 12,
+      "totalBytes": 63045202,
+      "maxBytes": 8430284,
+      "medianBytes": 5666960
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 15,
+      "packages": 12,
+      "totalBytes": 77275405,
+      "maxBytes": 12061364,
+      "medianBytes": 6715074
+    },
+    {
+      "gridKM": 15,
+      "maxZoom": 16,
+      "packages": 12,
+      "totalBytes": 94771369,
+      "maxBytes": 16547478,
+      "medianBytes": 7972139
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 14,
+      "packages": 9,
+      "totalBytes": 54265621,
+      "maxBytes": 11063182,
+      "medianBytes": 5060182
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 15,
+      "packages": 9,
+      "totalBytes": 68603179,
+      "maxBytes": 16010843,
+      "medianBytes": 6412332
+    },
+    {
+      "gridKM": 20,
+      "maxZoom": 16,
+      "packages": 9,
+      "totalBytes": 86543384,
+      "maxBytes": 22149145,
+      "medianBytes": 8214353
+    }
+  ],
+  "decision": {
+    "gridKM": 10,
+    "maxZoom": 16,
+    "bufferMeters": 1000,
+    "reason": "Preserve highest tested zoom and reduce maximum urban package from 59.4 MB to 41.4 MB. The 40 MB target is approximate; actual route capacity remains pending ORS."
+  }
+}
