@@ -1,0 +1,37 @@
+name: Compare grid and zoom sizes
+on:
+  push:
+    paths: ['benchmark.py', '.github/workflows/benchmark.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        country: [JP, TW]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y osmium-tool
+          pip install -r requirements.txt
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          COUNTRY: ${{ matrix.country }}
+        run: python benchmark.py --country "$COUNTRY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.country }}
+          path: benchmark-*.json
+          retention-days: 30
