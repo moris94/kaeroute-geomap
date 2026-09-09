@@ -38,6 +38,14 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'data';data=b'offline'*200000;p.write_bytes(data)
             self.assertEqual(pipeline.digest(p),hashlib.sha256(data).hexdigest())
+    def test_country_extent_includes_islands_and_excludes_relation_outliers(self):
+        from shapely.geometry import Point
+        for country,points in [('JP',[(139.77,35.68),(141.67,45.41),(127.68,26.21),(124.16,24.34)]),
+                               ('TW',[(121.52,25.05),(120.30,22.64),(119.57,23.57),(118.32,24.43)])]:
+            extent=pipeline.boundary(country)
+            self.assertTrue(all(extent.covers(Point(*p)) for p in points))
+        self.assertFalse(pipeline.boundary('TW').covers(Point(120,34)))
+        self.assertFalse(pipeline.boundary('JP').covers(Point(0,0)))
     def test_profile_schema_and_dependencies(self):
         import yaml
         value=yaml.safe_load((ROOT/'profile.yml').read_text())

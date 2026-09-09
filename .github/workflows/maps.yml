@@ -23,7 +23,7 @@ permissions:
   contents: write
 concurrency:
   group: map-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   configuration:
     runs-on: ubuntu-24.04

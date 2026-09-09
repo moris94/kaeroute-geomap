@@ -106,6 +106,12 @@ def plan(args):
                 y = math.floor((node.location.lat+90)/g['latitudeStep'])
                 occupied.add((x,y))
     Nodes().apply_file(str(source))
+    from shapely.geometry import box
+    from shapely.prepared import prep
+    extent = prep(boundary(args.country))
+    # Complete OSM relations may contain nodes thousands of kilometres outside
+    # the extract. They are geometry context, not supported download coverage.
+    occupied = {(x,y) for x,y in occupied if extent.intersects(box(*cell(x,y,g)))}
     # A full cell of padding provides coastal context and covers the 2 km PoC buffer.
     cells = {(x+dx,y+dy) for x,y in occupied for dx in (-1,0,1) for dy in (-1,0,1)}
     if args.scope == 'poc':
@@ -123,8 +129,10 @@ def plan(args):
         specs.append({'batch':batch,'country':args.country,'grid':g,'bounds':b,'extractionBounds':extraction,
                       'cells':[{'id':f'{args.country}-{x}-{y}','bounds':cell(x,y,g)} for x,y in members],
                       'sourceURL':source_url,'sourceSHA256':source_sha,'sourceDate':SOURCE_DATE,
+                      'boundarySHA256':digest(ROOT/'bounds'/f'{args.country}.poly'),
                       'mapVersion':args.version,'minZoom':8,'maxZoom':args.zoom,'planetilerVersion':PLANETILER_VERSION})
     tag = f'SOURCE-{args.country}-{args.version}'
+    if len(specs)*2+1 >= 900: raise ValueError('source release needs partitioning before upload')
     release(args.repo,tag,tag)
     # Limit the number of simultaneous extracts to keep osmium's indexes bounded.
     for offset in range(0,len(specs),12):
@@ -147,6 +155,27 @@ def plan(args):
 
 def intersects(a,b):
     return a[0] <= b[2] and a[2] >= b[0] and a[1] <= b[3] and a[3] >= b[1]
+
+
+def boundary(country):
+    """Pinned Geofabrik extraction extent, including islands and polygon holes."""
+    from shapely.geometry import Polygon
+    from shapely.ops import unary_union
+    lines = iter((ROOT/'bounds'/f'{country}.poly').read_text().splitlines()[1:])
+    positive, negative = [], []
+    for label in lines:
+        label = label.strip()
+        if label == 'END': break
+        if not label: continue
+        coordinates = []
+        for line in lines:
+            if line.strip() == 'END': break
+            coordinates.append(tuple(map(float,line.split())))
+        polygon = Polygon(coordinates)
+        if not polygon.is_valid: raise ValueError('invalid extraction boundary')
+        (negative if label.startswith('!') else positive).append(polygon)
+    if not positive: raise ValueError('empty extraction boundary')
+    return unary_union(positive).difference(unary_union(negative))
 
 
 def build(args):
