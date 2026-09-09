@@ -80,6 +80,10 @@ def upload(repo, tag, files):
     for path in files:
         path = Path(path)
         if path.name in assets:
+            known_digest = assets[path.name].get('digest')
+            if known_digest and known_digest.startswith('sha256:'):
+                if known_digest != 'sha256:'+digest(path): raise ValueError('immutable asset differs: '+path.name)
+                continue
             with urllib.request.urlopen(assets[path.name]['browser_download_url']) as response:
                 h = hashlib.sha256()
                 for block in iter(lambda: response.read(1024*1024), b''): h.update(block)
@@ -98,6 +102,12 @@ def plan(args):
     md5 = urllib.request.urlopen(source_url + '.md5').read().decode().split()[0]
     if digest(source, 'md5') != md5: raise ValueError('source checksum mismatch')
     source_sha = digest(source)
+    # Extract's bitsets scale with the largest ID, not the number of local
+    # objects. Dense derived IDs keep smart multi-extracts within runner RAM.
+    dense = work/'dense.osm.pbf'
+    run('osmium','renumber',source,'-o',dense,'--overwrite')
+    source.unlink(); dense.replace(source)
+    dense_sha = digest(source)
     occupied = set()
     class Nodes(osmium.SimpleHandler):
         def node(self, node):
@@ -130,10 +140,16 @@ def plan(args):
                       'cells':[{'id':f'{args.country}-{x}-{y}','bounds':cell(x,y,g)} for x,y in members],
                       'sourceURL':source_url,'sourceSHA256':source_sha,'sourceDate':SOURCE_DATE,
                       'boundarySHA256':digest(ROOT/'bounds'/f'{args.country}.poly'),
+                      'derivedIDs':'dense, not original OSM IDs; never upload to OSM','denseSourceSHA256':dense_sha,
                       'mapVersion':args.version,'minZoom':8,'maxZoom':args.zoom,'planetilerVersion':PLANETILER_VERSION})
     tag = f'SOURCE-{args.country}-{args.version}'
-    if len(specs)*2+1 >= 900: raise ValueError('source release needs partitioning before upload')
     release(args.repo,tag,tag)
+    for i,spec in enumerate(specs): spec['sourceTag']=f'{tag}-part{i//400+1:03d}'
+    for part in sorted({s['sourceTag'] for s in specs}): release(args.repo,part,part)
+    write(work/'coverage-plan.json',{'country':args.country,'gridCount':len(cells),'batchCount':len(specs),
+                                    'version':args.version,'grid':g,'batches':[s['batch'] for s in specs]})
+    upload(args.repo,tag,[work/'coverage-plan.json'])
+    print(f'{args.country}: {len(cells)} grids, {len(specs)} batches, extracting dense-ID inputs',flush=True)
     # Limit the number of simultaneous extracts to keep osmium's indexes bounded.
     for offset in range(0,len(specs),12):
         chunk = specs[offset:offset+12]
@@ -142,13 +158,13 @@ def plan(args):
         run('osmium','extract','-c',work/'extracts.json','-s','smart','-S','types=multipolygon',source,'--overwrite')
         for spec in chunk:
             pbf=work/(spec['batch']+'.osm.pbf'); spec['extractedSHA256']=digest(pbf)
-            spec['sourceTag']=tag
             write(work/(spec['batch']+'.json'),spec)
-            upload(args.repo,tag,[pbf,work/(spec['batch']+'.json')])
+            upload(args.repo,spec['sourceTag'],[pbf,work/(spec['batch']+'.json')])
             pbf.unlink()
+        print(f'{args.country}: published {min(offset+12,len(specs))}/{len(specs)} source batches',flush=True)
     write(work/'plan.json',{'country':args.country,'version':args.version,'scope':args.scope,'grid':g,'batches':specs})
     upload(args.repo,tag,[work/'plan.json'])
-    output = {'include':[{'batch':s['batch'],'sourceTag':tag,'version':args.version} for s in specs]}
+    output = {'include':[{'batch':s['batch'],'sourceTag':s['sourceTag'],'version':args.version} for s in specs]}
     write(args.output,output)
     print(f'{args.country}: {len(cells)} grids, {len(specs)} build jobs')
 
