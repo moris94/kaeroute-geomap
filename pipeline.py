@@ -86,29 +86,34 @@ def github_api(endpoint, method='GET', payload=None, file=None):
     elif encoded is not None:
         headers.update({'Content-Type':'application/json','Content-Length':str(len(encoded))})
     deadline=time.monotonic()+4*3600
+    transient_failures=0
     for attempt in range(20):
+        # With two workflow workers this caps writes at about 450/hour.
+        # Pace every attempt, including retries and newly started jobs.
+        if method not in ('GET','HEAD'): time.sleep(16)
         connection=http.client.HTTPSConnection(host,timeout=120)
         try:
             with Path(file).open('rb') if file else contextlib.nullcontext(encoded) as body:
                 connection.request(method,'/'+endpoint.lstrip('/'),body=body,headers=headers)
                 response=connection.getresponse(); raw=response.read()
-            value=json.loads(raw) if raw else {}
+            try: value=json.loads(raw) if raw else {}
+            except (ValueError,UnicodeDecodeError): value={}
             if 200 <= response.status < 300: return value
             message=value.get('message','request failed')
             if response.status in (403,429) and ('rate limit' in message.lower() or response.status==429):
                 reset=response.getheader('X-RateLimit-Reset','0')
                 after=response.getheader('Retry-After','60')
-                delay=max(60,int(after) if after.isdigit() else 60,
+                delay=max(min(900,60*2**attempt),int(after) if after.isdigit() else 60,
                           int(reset)-int(time.time())+5 if reset.isdigit() else 0)
                 if time.monotonic()+delay > deadline: raise GitHubAPIError(response.status,'quota wait exceeded four hours; resume this build later')
                 print(f'GitHub quota reached; waiting {delay}s before resuming the same request',flush=True)
                 time.sleep(delay); continue
-            if response.status >= 500 and attempt < 6:
-                time.sleep(min(60,2**attempt)); continue
+            if response.status >= 500 and transient_failures < 6:
+                time.sleep(min(60,2**transient_failures)); transient_failures+=1; continue
             raise GitHubAPIError(response.status,message)
         except (OSError,http.client.HTTPException):
-            if attempt >= 6: raise
-            time.sleep(min(60,2**attempt))
+            if transient_failures >= 6: raise
+            time.sleep(min(60,2**transient_failures)); transient_failures+=1
         finally:
             connection.close()
     raise RuntimeError('GitHub retry budget exhausted; resume this build later')

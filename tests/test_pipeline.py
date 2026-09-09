@@ -28,14 +28,33 @@ class PipelineTests(unittest.TestCase):
         with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}), patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection), patch.object(pipeline.time,'sleep') as sleep:
             with self.assertRaises(pipeline.GitHubAPIError):pipeline.github_api('repos/owner/maps/releases')
             sleep.assert_not_called()
+    def test_secondary_quota_backoff_can_outlast_twenty_minutes(self):
+        connection=Mock()
+        connection.getresponse.side_effect=[self.response(429,{'message':'secondary rate limit'}) for _ in range(6)]+[self.response(200,{'id':1})]
+        with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection),patch.object(pipeline.time,'sleep') as sleep:
+            self.assertEqual(pipeline.github_api('repos/owner/maps/releases'),{'id':1})
+            self.assertEqual([call.args[0] for call in sleep.call_args_list],[60,120,240,480,900,900])
+    def test_quota_deadline_remains_bounded(self):
+        connection=Mock();connection.getresponse.return_value=self.response(429,{}, {'Retry-After':'14401'})
+        with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection),patch.object(pipeline.time,'sleep') as sleep:
+            with self.assertRaises(pipeline.GitHubAPIError):pipeline.github_api('repos/owner/maps/releases')
+            sleep.assert_not_called()
+    def test_non_json_gateway_failure_retries(self):
+        failed=self.response(502,{})
+        failed.read.return_value=b'<html>Bad gateway</html>'
+        connection=Mock();connection.getresponse.side_effect=[failed,self.response(200,{'id':1})]
+        with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection),patch.object(pipeline.time,'sleep') as sleep:
+            self.assertEqual(pipeline.github_api('repos/owner/maps/releases'),{'id':1})
+            sleep.assert_called_once_with(1)
     def test_github_upload_streams_file_with_known_length(self):
         connection=Mock();connection.getresponse.return_value=self.response(201,{'id':2})
         captured=[]
         connection.request.side_effect=lambda method,path,body,headers:captured.append((body.read(),headers['Content-Length']))
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'asset';path.write_bytes(b'map')
-            with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection):
+            with patch.dict(pipeline.os.environ,{'GH_TOKEN':'fixture-token'}),patch.object(pipeline.http.client,'HTTPSConnection',return_value=connection),patch.object(pipeline.time,'sleep') as sleep:
                 self.assertEqual(pipeline.github_api('repos/owner/maps/releases/1/assets?name=asset','POST',file=path),{'id':2})
+                sleep.assert_called_once_with(16)
         self.assertEqual(captured,[(b'map','3')])
     def test_empty_tile_uses_pmtiles_compression_enum(self):
         import gzip
