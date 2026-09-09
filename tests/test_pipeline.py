@@ -10,6 +10,13 @@ spec=importlib.util.spec_from_file_location('pipeline',ROOT/'pipeline.py')
 pipeline=importlib.util.module_from_spec(spec);spec.loader.exec_module(pipeline)
 
 class PipelineTests(unittest.TestCase):
+    def test_empty_tile_uses_pmtiles_compression_enum(self):
+        import gzip
+        from pmtiles.tile import Compression
+        self.assertEqual(gzip.decompress(pipeline.empty_tile(Compression.GZIP)),b'')
+        self.assertEqual(pipeline.empty_tile(Compression.NONE),b'')
+        self.assertEqual(pipeline.empty_tile(Compression.GZIP),pipeline.empty_tile(Compression.GZIP))
+        with self.assertRaises(ValueError):pipeline.empty_tile(Compression.UNKNOWN)
     def example(self):
         g=pipeline.grid('JP');x,y=1920,932
         return {'schemaVersion':1,'mapVersion':'2026-09-test','grids':{'JP':g},'packages':{

@@ -96,6 +96,23 @@ def plan(args):
     import osmium
     work = Path(args.work).resolve(); work.mkdir(parents=True, exist_ok=True)
     g = grid(args.country, args.size)
+    # A final source plan exists only after all immutable extracts were uploaded.
+    # Resume tile generation without downloading/scanning the entire country.
+    tag = f'SOURCE-{args.country}-{args.version}'
+    existing = subprocess.run(['gh','api',f'repos/{args.repo}/releases/tags/{tag}'],capture_output=True,text=True)
+    if existing.returncode == 0:
+        asset = next((a for a in json.loads(existing.stdout)['assets'] if a['name']=='plan.json'),None)
+        if asset:
+            download(asset['browser_download_url'],work/'plan.json')
+            previous = json.loads((work/'plan.json').read_text())
+            if (previous['version'] != args.version or previous['scope'] != args.scope or previous['grid'] != g
+                or any(s['maxZoom'] != args.zoom or s.get('boundarySHA256') != digest(ROOT/'bounds'/f'{args.country}.poly') for s in previous['batches'])):
+                raise ValueError('immutable source plan differs from request')
+            write(args.output,{'include':[{'batch':s['batch'],'sourceTag':s['sourceTag'],'version':args.version} for s in previous['batches']]})
+            print(f"{args.country}: reused {len(previous['batches'])} verified source batch specifications",flush=True)
+            return
+    elif '404' not in existing.stderr:
+        raise RuntimeError('could not inspect source release: '+existing.stderr)
     source_url = f'https://download.geofabrik.de/asia/{SOURCES[args.country]}-{SOURCE_DATE}.osm.pbf'
     source = work/'source.osm.pbf'
     download(source_url, source)
@@ -173,6 +190,14 @@ def intersects(a,b):
     return a[0] <= b[2] and a[2] >= b[0] and a[1] <= b[3] and a[3] >= b[1]
 
 
+def empty_tile(compression):
+    import gzip
+    from pmtiles.tile import Compression
+    if compression == Compression.GZIP: return gzip.compress(b'',mtime=0)
+    if compression == Compression.NONE: return b''
+    raise ValueError('unsupported empty tile compression')
+
+
 def boundary(country):
     """Pinned Geofabrik extraction extent, including islands and polygon holes."""
     from shapely.geometry import Polygon
@@ -241,7 +266,7 @@ def build(args):
                 if not any(e.tile_id >= zxy_to_tileid(z,0,0) and e.tile_id < zxy_to_tileid(z+1,0,0) for e in w.tile_entries):
                     lon=(c['bounds'][0]+c['bounds'][2])/2;lat=(c['bounds'][1]+c['bounds'][3])/2
                     x=int((lon+180)/360*2**z);y=int((1-math.asinh(math.tan(math.radians(lat)))/math.pi)/2*2**z)
-                    empty=gzip.compress(b'',mtime=0) if int(h['tile_compression'])==2 else b''
+                    empty=empty_tile(h['tile_compression'])
                     w.write_tile(zxy_to_tileid(z,x,y),empty)
             compress=gzip.compress
             with patch('gzip.compress',side_effect=lambda data, *a, **kw: compress(data,mtime=0)):
